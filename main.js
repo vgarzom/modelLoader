@@ -33,12 +33,14 @@ var FSHADER_SOURCE =
     'uniform sampler2D uSampler;\n' +
     'uniform mat4 u_NormalMatrix;\n' +
     'varying vec4 v_Normal;\n' +
+    'uniform bool uHasTexture;\n' +
     'void main() {\n' +
     '  vec3 lightDirection = vec3(-0.35, 0.35, 0.87);\n' +
     '  vec3 normal = normalize(vec3(u_NormalMatrix * v_Normal));\n' +
     '  float nDotL = max(dot(normal, lightDirection), 0.0);\n' +
     '  vec4 texelColor = texture2D(uSampler, v_Texture);\n' +
-    '  gl_FragColor = vec4(texelColor.rgb * nDotL, texelColor.a);\n' +
+    '  if (uHasTexture) {gl_FragColor = vec4(texelColor.rgb * nDotL, texelColor.a);}\n' +
+    '  else {gl_FragColor = vec4(v_Color.rgb * nDotL, v_Color.a);}\n' +
     '}\n';
 
 function main() {
@@ -71,6 +73,7 @@ function main() {
     program.u_MvpMatrix = gl.getUniformLocation(program, 'u_MvpMatrix');
     program.u_NormalMatrix = gl.getUniformLocation(program, 'u_NormalMatrix');
     program.uSampler = gl.getUniformLocation(program, 'uSampler');
+    program.hasTexture = gl.getUniformLocation(program, 'uHasTexture');
 
     if (program.a_Position < 0 || program.a_Normal < 0 || program.a_Color < 0 ||
         !program.u_MvpMatrix || !program.u_NormalMatrix) {
@@ -91,8 +94,11 @@ function main() {
 
     // Start reading the OBJ file
     var missileTexture = initTexture('objs/missile/Texture.png', gl);
+    //var missileTexture = initTexture('objs/Textures/sh3.jpg', gl);
     readOBJFile('objs/missile/missile.obj', gl, model, 30, true);
+    //readOBJFile('objs/Sample_Ship_OBJ/Sample_Ship.obj', gl, model, 70, true);
     //readOBJFile('objs/cube/cube.obj', gl, model, 50, true);
+    //readOBJFile('objs/low_polly/low-poly-mill.obj', gl, model, 1, true);
     var currentAngle = 0.0; // Current rotation angle [degree]
     var tick = function () {   // Start drawing
         currentAngle = animate(currentAngle); // Update current rotation angle
@@ -124,10 +130,14 @@ function draw(gl, program, angle, viewProjMatrix, model, texture) {
     g_mvpMatrix.multiply(g_modelMatrix);
     gl.uniformMatrix4fv(program.u_MvpMatrix, false, g_mvpMatrix.elements);
 
-    gl.activeTexture(gl.TEXTURE1);
-    gl.bindTexture(gl.TEXTURE_2D, texture);
-    gl.uniform1i(program.uSampler, 1);
-
+    if (texture != null) {
+        gl.uniform1i(program.hasTexture, true);
+        gl.activeTexture(gl.TEXTURE1);
+        gl.bindTexture(gl.TEXTURE_2D, texture);
+        gl.uniform1i(program.uSampler, 1);
+    }else{
+        gl.uniform1i(program.hasTexture, false);
+    }
     // Draw
     gl.drawElements(gl.TRIANGLES, g_drawingInfo.indices.length, gl.UNSIGNED_SHORT, 0);
 }
