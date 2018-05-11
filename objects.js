@@ -27,10 +27,9 @@ var Material = function(name, r, g, b, a) {
     //------------------------------------------------------------------------------
   // Texture Object
   //------------------------------------------------------------------------------
-  var Texture = function(x, y, w) {
+  var Texture = function(x, y) {
     this.x = x;
     this.y = y;
-    this.w = w;
   }
   
   //------------------------------------------------------------------------------
@@ -71,9 +70,10 @@ var Material = function(name, r, g, b, a) {
   //------------------------------------------------------------------------------
   // DrawInfo Object
   //------------------------------------------------------------------------------
-  var DrawingInfo = function(vertices, normals, colors, indices) {
+  var DrawingInfo = function(vertices, normals, colors, indices, textures) {
     this.vertices = vertices;
     this.normals = normals;
     this.colors = colors;
     this.indices = indices;
+    this.textures = textures;
   }

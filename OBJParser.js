@@ -10,6 +10,7 @@ var OBJDoc = function(fileName) {
     this.objects = new Array(0);   // Initialize the property for Object
     this.vertices = new Array(0);  // Initialize the property for Vertex
     this.normals = new Array(0);   // Initialize the property for Normal
+    this.textures = new Array(0);
   }
   
   // Parsing the OBJ file
@@ -20,7 +21,7 @@ var OBJDoc = function(fileName) {
   
     var currentObject = null;
     var currentMaterialName = "";
-    
+    var textindex = 0;
     // Parse line by line
     var line;         // A string in the line to be parsed
     var sp = new StringParser();  // Create StringParser
@@ -63,6 +64,11 @@ var OBJDoc = function(fileName) {
         var normal = this.parseNormal(sp);
         this.normals.push(normal); 
         continue; // Go to the next line
+      case 'vt':   // Read texture
+        textindex++;
+        var texture = this.parseTexture(sp);
+        this.textures.push(texture); 
+        continue; // Go to the next line
       case 'usemtl': // Read Material name
         currentMaterialName = this.parseUsemtl(sp);
         continue; // Go to the next line
@@ -72,7 +78,7 @@ var OBJDoc = function(fileName) {
         continue; // Go to the next line
       }
     }
-  
+    console.log(currentObject.faces);
     return true;
   }
   
@@ -103,6 +109,12 @@ var OBJDoc = function(fileName) {
     var z = sp.getFloat();
     return (new Normal(x, y, z));
   }
+
+  OBJDoc.prototype.parseTexture = function(sp) {
+    var x = sp.getFloat();
+    var y = sp.getFloat();
+    return (new Texture(x, y));
+  }
   
   OBJDoc.prototype.parseUsemtl = function(sp) {
     return sp.getWord();
@@ -114,12 +126,11 @@ var OBJDoc = function(fileName) {
     for(;;){
       var word = sp.getWord();
       if(word == null) break;
+
       var subWords = word.split('/');
       if(subWords.length >= 1){
         var vi = parseInt(subWords[0]) - 1;
         face.vIndices.push(vi);
-      }
-      if(subWords.length >= 2){
         var ti = parseInt(subWords[1]) - 1;
         face.tIndices.push(ti);
       }
@@ -172,6 +183,7 @@ var OBJDoc = function(fileName) {
       var n = face.vIndices.length - 2;
       var newVIndices = new Array(n * 3);
       var newNIndices = new Array(n * 3);
+      var newTIndices = new Array(n * 3);
       for(var i=0; i<n; i++){
         newVIndices[i * 3 + 0] = face.vIndices[0];
         newVIndices[i * 3 + 1] = face.vIndices[i + 1];
@@ -179,9 +191,13 @@ var OBJDoc = function(fileName) {
         newNIndices[i * 3 + 0] = face.nIndices[0];
         newNIndices[i * 3 + 1] = face.nIndices[i + 1];
         newNIndices[i * 3 + 2] = face.nIndices[i + 2];
+        newTIndices[i * 3 + 0] = face.tIndices[0];
+        newTIndices[i * 3 + 1] = face.tIndices[i + 1];
+        newTIndices[i * 3 + 2] = face.tIndices[i + 2];
       }
       face.vIndices = newVIndices;
       face.nIndices = newNIndices;
+      face.tIndices = newTIndices;
     }
     face.numIndices = face.vIndices.length;
   
@@ -252,6 +268,7 @@ var OBJDoc = function(fileName) {
     var numVertices = numIndices;
     var vertices = new Float32Array(numVertices * 3);
     var normals = new Float32Array(numVertices * 3);
+    var textures = new Float32Array(numVertices * 2);
     var colors = new Float32Array(numVertices * 4);
     var indices = new Uint16Array(numIndices);
   
@@ -263,6 +280,7 @@ var OBJDoc = function(fileName) {
         var face = object.faces[j];
         var color = this.findColor(face.materialName);
         var faceNormal = face.normal;
+        var faceTexture = face.texture;
         for(var k = 0; k < face.vIndices.length; k++){
           // Set index
           indices[index_indices] = index_indices;
@@ -289,11 +307,21 @@ var OBJDoc = function(fileName) {
             normals[index_indices * 3 + 1] = faceNormal.y;
             normals[index_indices * 3 + 2] = faceNormal.z;
           }
+          // Copy texture
+          var tIdx = face.tIndices[k];
+            var texture = this.textures[tIdx];
+            if (typeof(texture) != 'undefined'){
+                textures[index_indices * 2 + 0] = texture.x;
+                textures[index_indices * 2 + 1] = texture.y;
+            }else {
+                textures[index_indices * 2 + 0] = 0.5;
+                textures[index_indices * 2 + 1] = 0.5;
+            }
           index_indices ++;
         }
       }
     }
   
-    return new DrawingInfo(vertices, normals, colors, indices);
+    return new DrawingInfo(vertices, normals, colors, indices, textures);
   }
   
