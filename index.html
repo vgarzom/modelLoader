@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <title>OBJ Viewer</title>
+  <script id="shader-fs" type="x-shader/x-fragment">
+    #ifdef GL_ES
+      precision mediump float;
+    #endif
+    varying vec4 v_Color;
+    void main() {
+      gl_FragColor = v_Color;
+    }
+  </script>
+
+  <script id="shader-vs" type="x-shader/x-vertex">
+    attribute vec4 a_Position;
+    attribute vec4 a_Color;
+    attribute vec4 a_Normal;
+    uniform mat4 u_MvpMatrix;
+    uniform mat4 u_NormalMatrix;
+    varying vec4 v_Color;
+    void main() {
+      vec3 lightDirection = vec3(-0.35, 0.35, 0.87);
+      gl_Position = u_MvpMatrix * a_Position;
+      vec3 normal = normalize(vec3(u_NormalMatrix * a_Normal));
+      float nDotL = max(dot(normal, lightDirection), 0.0);
+      v_Color = vec4(a_Color.rgb * nDotL, a_Color.a);
+    }
+  </script>
+</head>
+
+<body onload="main()">
+  <canvas id="webgl" width="400" height="400">
+    Please use a browser that supports "canvas"
+  </canvas>
+
+  <script type='text/javascript' src="libs/webgl-utils.js"></script>
+  <script type='text/javascript' src="libs/webgl-debug.js"></script>
+  <script type='text/javascript' src="libs/gl-matrix.js"></script>
+  <script type='text/javascript' src="libs/cuon-utils.js"></script>
+  <script type='text/javascript' src="libs/cuon-matrix.js"></script>
+  <script type='text/javascript' src="globals.js"></script>
+  <script type='text/javascript' src="figures.js"></script>
+  <script type='text/javascript' src="helpers.js"></script>
+  <script type='text/javascript' src="OBJParser.js"></script>
+  <script type='text/javascript' src="MTLParser.js"></script>
+  <script type='text/javascript' src="string-parser.js"></script>
+  <script type='text/javascript' src="objects.js"></script>
+  <script type='text/javascript' src="main.js"></script>
+
+</body>
+
+</html>
